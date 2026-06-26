@@ -1,0 +1,9 @@
+.person-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.person-row p {
+    margin: 0;
+}

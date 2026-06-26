@@ -1,30 +1,44 @@
 import { useEffect, useState } from 'react'
-import PersonForm from './PersonForm'
-import Filter from './Filter'
-import Persons from './Persons'
-import axios from 'axios'
+import PersonForm from './components/PersonForm.jsx'
+import Filter from './components/Filter.jsx'
+import Persons from './components/Persons.jsx'
+import personService from './services/persons.js'
 
 const App = () => {
     const [persons, setPersons] = useState([])
     const [newSearch, setNewSearch] = useState('')
 
     useEffect(() => {
-        axios.get('http://localhost:3001/persons').then((response) => {
-            setPersons(response.data)
+       personService.getAll()
+        .then(initialPersons => {
+            setPersons((initialPersons))
         })
     })
 
     const handleAddPerson = (newPerson) => {
         if (persons.some((person) => person.name === newPerson.name)) {
-            alert(`${newPerson.name} is already added to phonebook`)
+            if(window.confirm(`${newPerson.name} is already added to phonebook, replace the old number with a new one?`)) {
+                const personToUpdate = persons.find(p => p.name === newPerson.name)
+                personService.update(personToUpdate.id, newPerson).then((returnedPerson) => {
+                    setPersons(persons.map(person => person.id === personToUpdate.id ? returnedPerson : person))
+                })
+            }
         } else {
-            setPersons(persons.concat(newPerson))
+            personService.create(newPerson).then((returnedPerson) => {
+                setPersons(persons.concat(returnedPerson))
+            })
         }
     }
 
-    const handleNewSearch = (event) => {
-        setNewSearch(event.target.value)
+    const handleDeletePerson = (personId) => {
+        if(window.confirm(`Delete ${persons.find(person => person.id === personId).name} ?`)) {
+            personService.remove(personId).then(() => {
+                setPersons((initialPersons) => initialPersons.filter((person) => person !== personId))
+            })
+        }
     }
+
+
 
     const searchedPersons =
         newSearch.length === 0
@@ -38,7 +52,7 @@ const App = () => {
             <h2>Add a new</h2>
             <PersonForm onAdd={handleAddPerson} />
             <h2>Numbers</h2>
-            <Persons persons={searchedPersons} />
+            <Persons persons={searchedPersons} onDelete={handleDeletePerson} />
         </div>
     )
 }
